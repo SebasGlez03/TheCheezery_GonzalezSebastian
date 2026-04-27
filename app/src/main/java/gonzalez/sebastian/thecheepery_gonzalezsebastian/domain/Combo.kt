@@ -1,10 +1,8 @@
 package gonzalez.sebastian.thecheepery_gonzalezsebastian.domain
 
-data class Product(
+data class Combo(
     val id: Int = 0,
     val name: String,
     val price: Float,
-    val image: String? = null,
-    val description: String? = null,
-    val type: String
+    val products: List<Product> = emptyList()
 )

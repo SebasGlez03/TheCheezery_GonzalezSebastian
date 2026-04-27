@@ -1,44 +1,65 @@
 package gonzalez.sebastian.thecheepery_gonzalezsebastian.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import gonzalez.sebastian.thecheepery_gonzalezsebastian.R
-import gonzalez.sebastian.thecheepery_gonzalezsebastian.components.ProductForm
+import gonzalez.sebastian.thecheepery_gonzalezsebastian.data.DatabaseHelper
+import gonzalez.sebastian.thecheepery_gonzalezsebastian.data.ProductsDAO
 import gonzalez.sebastian.thecheepery_gonzalezsebastian.domain.Product
-import gonzalez.sebastian.thecheepery_gonzalezsebastian.ui.theme.Pinky
 import gonzalez.sebastian.thecheepery_gonzalezsebastian.viewmodel.ProductViewModel
 
 @Composable
-fun ShowProducts(viewModel: ProductViewModel) {
-    Column{
-        Text("Products")
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+fun ProductsScreen(type: String) {
+    val context = LocalContext.current
+    
+    val viewModel: ProductViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val dbHelper = DatabaseHelper(context)
+                val dao = ProductsDAO(dbHelper)
+                return ProductViewModel(dao) as T
+            }
+        }
+    )
+    
+    LaunchedEffect(type) {
+        viewModel.getProductsByType(type)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = type,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFE91E63),
+            modifier = Modifier.padding(bottom = 20.dp)
+        )
+
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
             items(viewModel.productsListState) { product ->
                 ProductItem(product)
             }
@@ -48,57 +69,42 @@ fun ShowProducts(viewModel: ProductViewModel) {
 
 @Composable
 fun ProductItem(product: Product) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-        Image(painterResource(R.drawable.muffin), contentDescription = "muffin")
-        Column(modifier = Modifier.fillMaxWidth(0.7f)) {
-            Text("${product.name}")
-            Text("${product.description}")
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val context = LocalContext.current
+        val imageRes = if (product.image != null) {
+            context.resources.getIdentifier(product.image, "drawable", context.packageName)
+        } else 0
+        
+        Image(
+            painter = painterResource(id = if (imageRes != 0) imageRes else R.drawable.muffin),
+            contentDescription = product.name,
+            modifier = Modifier.size(100.dp)
+        )
+        
+        Spacer(modifier = Modifier.width(16.dp))
+        
+        Column {
+            Text(
+                text = product.name,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = product.description ?: "",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+            Text(
+                text = "$${product.price}",
+                fontSize = 18.sp,
+                color = Color(0xFF4CAF50),
+                fontWeight = FontWeight.Medium
+            )
         }
     }
-}
-
-@Composable
-fun AddProductScreen(innerPadding: PaddingValues, products: List<Product>, onSaveProduct: (name: String, price: Float, image: String, description: String) -> Unit){
-    var name by remember { mutableStateOf("") }
-    var priceField by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(10.dp)) {
-        Text("Add a new product", color = Pinky, fontSize = 30.sp, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(30.dp))
-        OutlinedTextField(
-            value = name,
-            onValueChange = {name = it},
-            label = {Text("Name")}
-        )
-        OutlinedTextField(
-            value = priceField,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            onValueChange = {priceField = it},
-            label = {Text("Price")},
-            trailingIcon = {Image(
-                painter = painterResource(R.drawable.dolar),
-                contentDescription = "Dolar icon"
-            )}
-        )
-        OutlinedTextField(
-            value = description,
-            onValueChange = {description = it},
-            label = {Text("Description")}
-        )
-    }
-}
-
-
-@Preview (showBackground = true)
-@Composable
-fun AddProductScreenPreview(){
-    AddProductScreen(PaddingValues(20.dp),
-        listOf(Product(1,
-        "Latte",
-        50f,
-        "",
-        "")),
-        {name, price, image, description -> }
-    )
 }
