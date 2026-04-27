@@ -11,7 +11,7 @@ import gonzalez.sebastian.thecheepery_gonzalezsebastian.data.ProductsDAO
 import gonzalez.sebastian.thecheepery_gonzalezsebastian.domain.Product
 import kotlinx.coroutines.launch
 
-class ProductsViewModel(private val dao: ProductsDAO, private val context: Context): ViewModel() {
+class ProductViewModel(private val dao: ProductsDAO, private val context: Context): ViewModel() {
     var productsListState by mutableStateOf(listOf<Product>())
 
     init {
